@@ -23,3 +23,8 @@ var (
 	ScheduleWorkdayEnd      string
 	ScheduleWorkdayTimezone string
 )
+
+// Misc variables
+var (
+	AllowedOutputFormats = []string{"json", "yaml", "text"}
+)
