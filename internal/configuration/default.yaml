@@ -1,0 +1,18 @@
+settings:
+  logs: # Log settings for the worklog
+    path: "$HOME/.worklog/logs" # Path to store the worklog (Use $HOME for the user's home directory)
+  git: # Git settings for syncing
+    sync: false # Enable syncing to a Git repository
+    # This assumes that git is already configured on your system
+    # to access the repository with the provided URI
+    uri: "" # Git URI (SSH or HTTPS)
+    branch: main # Branch in the Git repository
+  schedule: # Schedule settings for your work week
+    days: # Days of the week you work
+      start: "Monday" # Start day of the work week
+      end: "Friday" # End day of the work week
+    workday: # Hours of the workday
+      enabled: true # Restricts when you can log work when enabled
+      start: "09:00" # Start of the workday (24-hour format)
+      end: "17:00" # End of the workday (24-hour format)
+      timezone: "Local" # Timezone to use
