@@ -110,6 +110,22 @@ func actionAdd(logMessage string) (LogFileEntries, []string) {
 	// Now we can set the new log id
 	newLogId := highestLogId + 1
 
+	// Initialize both top level maps if nil
+	if lf.Log == nil {
+		lf.Log = make(map[string]map[int]string)
+	}
+	if lf.Time == nil {
+		lf.Time = make(map[string]map[int]TimeEntry)
+	}
+
+	// Initialize nested maps for today if nil
+	if lf.Log[today] == nil {
+		lf.Log[today] = make(map[int]string)
+	}
+	if lf.Time[today] == nil {
+		lf.Time[today] = make(map[int]TimeEntry)
+	}
+
 	// Add the log entry
 	lf.Log[today][newLogId] = logMessage
 
