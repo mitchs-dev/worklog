@@ -13,9 +13,10 @@ import (
 
 // addCli represents the add command
 var addCli = &cobra.Command{
-	Use:   "add",
-	Short: "Add a new entry to your worklog",
-	Long:  `This command will add a new entry to your worklog and then display the ID associated with the entry.`,
+	Use:     "add",
+	Aliases: []string{"a"},
+	Short:   "Add a new entry to your worklog",
+	Long:    `This command will add a new entry to your worklog and then display the ID associated with the entry.`,
 	Run: func(Cli *cobra.Command, args []string) {
 
 		log.Debug("Running the add command")
