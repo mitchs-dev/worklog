@@ -88,6 +88,11 @@ func (l *LogFile) SaveLogFile(logFilePath string) error {
 		return errors.New("error saving log file (" + logFilePath + ")")
 	}
 
+	// Delete the backup log file
+	if !processor.FileDelete(logFilePath + ".bak") {
+		return errors.New("error deleting backup log file (" + logFilePath + ".bak)")
+	}
+
 	log.Debug("Log file saved: " + logFilePath)
 
 	return nil
