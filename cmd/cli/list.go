@@ -83,7 +83,7 @@ Available Periods:
 				case "json":
 					stdReturn += fmt.Sprintf("\"%s\": \"%s\",", logId, logEntry.Message)
 				case "yaml":
-					stdReturn += fmt.Sprintf("  %s: %s\n", logId, logEntry.Message)
+					stdReturn += fmt.Sprintf("  %s: \"%s\"\n", logId, logEntry.Message)
 				case "text":
 					stdReturn += fmt.Sprintf("- [%s] %s\n", logId, logEntry.Message)
 				}
