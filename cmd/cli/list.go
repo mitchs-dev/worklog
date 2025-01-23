@@ -72,7 +72,7 @@ Available Periods:
 		if len(listEntries.Entries) > 0 {
 			switch outputFormat {
 			case "json":
-				stdReturn = "{\"period\":\"" + period + "\",\"worklog\":["
+				stdReturn = "{\"period\":\"" + period + "\",\"worklog\":{"
 			default:
 				stdReturn = "Period: " + period
 				stdReturn += "\nWorklog:\n"
@@ -81,16 +81,16 @@ Available Periods:
 				logEntry := listEntries.Entries[logId]
 				switch outputFormat {
 				case "json":
-					stdReturn += "{\"id\":\"" + logId + "\",\"status\":\"" + logEntry.Status + "\",\"message\":\"" + logEntry.Message + "\"},"
+					stdReturn += fmt.Sprintf("\"%s\": \"%s\",", logId, logEntry.Message)
 				case "yaml":
-					stdReturn += fmt.Sprintf("- \"[%s] %s\"\n", logId, logEntry.Message)
+					stdReturn += fmt.Sprintf("  %s: %s\n", logId, logEntry.Message)
 				case "text":
 					stdReturn += fmt.Sprintf("- [%s] %s\n", logId, logEntry.Message)
 				}
 			}
 			switch outputFormat {
 			case "json":
-				stdReturn = stdReturn[:len(stdReturn)-1] + "]}"
+				stdReturn = stdReturn[:len(stdReturn)-1] + "}}"
 			}
 			fmt.Println(strings.TrimSpace(stdReturn))
 		} else {
