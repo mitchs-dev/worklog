@@ -15,6 +15,9 @@ import (
 // GetLogFile opens the log file and returns the contents
 func (l *LogFile) GetLogFile(logFilePath string) error {
 
+	// Check if the log file exists
+	CreateWeekIfNotExist(logFilePath)
+
 	log.Debug("Opening log file: " + logFilePath)
 
 	// Open the log file
