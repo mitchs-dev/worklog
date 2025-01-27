@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/mitchs-dev/library-go/generator"
@@ -135,42 +136,113 @@ var syncCli = &cobra.Command{
 				log.Fatal("Failed to fetch remote origin: ", err)
 			}
 
-			// Check if we're up to date
-			cmd = exec.Command("git", "rev-list", "HEAD...origin/"+configuration.GitBranch, "--count")
-			output, err := cmd.Output()
+			// Check if we're up to date by comparing local and remote HEADs
+			cmd = exec.Command("git", "rev-parse", "HEAD")
+			localHead, err := cmd.Output()
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to check remote status: %v\n", err)
-				log.Fatal("Failed to check remote status: ", err)
+				fmt.Fprintf(os.Stderr, "Failed to get local HEAD: %v\n", err)
+				log.Fatal("Failed to get local HEAD: ", err)
 			}
 
-			if string(bytes.TrimSpace(output)) == "0" {
-				fmt.Println("You're up to date!")
-				os.Exit(0)
+			cmd = exec.Command("git", "rev-parse", "origin/"+configuration.GitBranch)
+			remoteHead, err := cmd.Output()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to get remote HEAD: %v\n", err)
+				log.Fatal("Failed to get remote HEAD: ", err)
 			}
 
-			// Stash any changes
-			log.Debug("Stashing any changes")
-			cmd = exec.Command("git", "stash")
-			err = cmd.Run()
-			if err != nil {
-				log.Fatal("Failed to stash changes: ", err)
-			}
+			// If the local and remote HEADs are equal, we're up to date
+			if bytes.Equal(bytes.TrimSpace(localHead), bytes.TrimSpace(remoteHead)) {
 
-			log.Debug("Checking for any upstream changes")
-			cmd = exec.Command("git", "pull", "origin", configuration.GitBranch)
-			var stderr bytes.Buffer
-			cmd.Stderr = &stderr
-			err = cmd.Run()
-			if err != nil {
-				log.Fatalf("Failed to pull changes: %s\n%s\n", err, stderr.String())
-			}
+				// Determine if there are any local changes
+				cmd = exec.Command("git", "status", "--porcelain")
+				output, err := cmd.Output()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to get status: %v\n", err)
+					log.Fatal("Failed to get status: ", err)
+				}
 
-			// Pop the stash
-			log.Debug("Popping the stash")
-			cmd = exec.Command("git", "stash", "pop")
-			err = cmd.Run()
-			if err != nil {
-				log.Fatal("Failed to pop the stash: ", err)
+				// If there are no local changes, exit
+				if len(output) == 0 {
+					fmt.Println("You're up to date!")
+					os.Exit(0)
+				}
+
+				// Find out how many files have changed
+				changedFiles := strings.Split(string(output), "\n")
+				changedFiles = changedFiles[:len(changedFiles)-1]
+				totalChanges := len(changedFiles)
+
+				// If we have local changes, continue
+				log.Info("No remote changes detected, but have " + fmt.Sprint(totalChanges) + " local changes.")
+
+			} else {
+
+				// Find out how many commits are behind
+				cmd = exec.Command("git", "rev-list", "--count", "HEAD..origin/"+configuration.GitBranch)
+				output, err := cmd.Output()
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to get commit count: %v\n", err)
+					log.Fatal("Failed to get commit count: ", err)
+				}
+
+				// Convert the commits we are behind to a count
+				commitsBehind := strings.TrimSpace(string(output))
+				commitsBehindCount, err := strconv.Atoi(commitsBehind)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to convert commits behind to int: %v\n", err)
+					log.Fatal("Failed to convert commits behind to int: ", err)
+				}
+
+				log.Info("Remote has " + fmt.Sprint(commitsBehindCount) + " commits ahead of local")
+
+				// If we're not up to date, stash any changes and pull the latest changes
+
+				log.Debug("Stashing any changes")
+				cmd = exec.Command("git", "stash")
+				err = cmd.Run()
+				if err != nil {
+					log.Fatal("Failed to stash changes: ", err)
+				}
+
+				log.Debug("Checking for any upstream changes")
+				cmd = exec.Command("git", "pull", "origin", configuration.GitBranch)
+				var stderr bytes.Buffer
+				cmd.Stderr = &stderr
+				err = cmd.Run()
+				if err != nil {
+					log.Fatalf("Failed to pull changes: %s\n%s\n", err, stderr.String())
+				}
+
+				// Pop the stash
+				log.Debug("Popping the stash")
+				cmd = exec.Command("git", "stash", "pop")
+				err = cmd.Run()
+				if err != nil {
+					log.Fatal("Failed to pop the stash: ", err)
+				}
+
+				// Find out how many local changes we have
+				cmd = exec.Command("git", "status", "--porcelain")
+				output, err = cmd.Output()
+				if err != nil {
+					log.Fatal("Failed to get status: ", err)
+				}
+
+				// If there are no local changes, exit
+				if len(output) == 0 {
+					fmt.Println("You're up to date!")
+					os.Exit(0)
+				}
+
+				// Find out how many files have changed
+				changedFiles := strings.Split(string(output), "\n")
+				changedFiles = changedFiles[:len(changedFiles)-1]
+				totalChanges := len(changedFiles)
+
+				// If we have local changes, continue
+				log.Info("Have " + fmt.Sprint(totalChanges) + " local changes.")
+
 			}
 
 			log.Debug("Running git add .")
@@ -180,7 +252,7 @@ var syncCli = &cobra.Command{
 				log.Fatal("Failed to add files: ", err)
 			}
 
-			log.Debug("Running git commit -m \"Snapshot\"")
+			log.Debug("Running git commit -m \"" + commitMessage + "\"")
 			cmd = exec.Command("git", "commit", "-m", commitMessage)
 			err = cmd.Run()
 			if err != nil {
@@ -190,7 +262,7 @@ var syncCli = &cobra.Command{
 			// Get the commit hash
 			log.Debug("Getting the commit hash")
 			cmd = exec.Command("git", "rev-parse", "HEAD")
-			output, err = cmd.Output()
+			output, err := cmd.Output()
 			if err != nil {
 				log.Fatal("Failed to get commit hash: ", err)
 			}
