@@ -113,6 +113,7 @@ This assumes that:
 
 1. You have installed `git` on your machine.
 2. You have configure authentication with your Git hosting service (e.g. GitHub, GitLab, Bitbucket).
+3. Your remote is configured and the name is set to `origin`. 
 
 #### Steps
 
